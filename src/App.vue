@@ -2,6 +2,8 @@
 import { useSpreadingActivationStore } from "@/store/spreadingActivationStore";
 import { onMounted, onUnmounted } from "vue";
 import { useRoute } from "vue-router";
+import { eventBus } from "@/eventBus";
+import { ref } from "vue";
 
 const store = useSpreadingActivationStore();
 const route = useRoute();
@@ -21,16 +23,71 @@ function handleBeforeUnload(e: BeforeUnloadEvent) {
   // }
 }
 
+// 按 「上上下下左右左右BA」 进入 debug 模式
+const debugSequence = [
+  "ArrowUp",
+  "ArrowUp",
+  "ArrowDown",
+  "ArrowDown",
+  "ArrowLeft",
+  "ArrowRight",
+  "ArrowLeft",
+  "ArrowRight",
+  "b",
+  "a",
+];
+const keySequence = ref<string[]>([]);
+const sequenceTimeout = ref<number | null>(null);
+
+function handleDebugMode(event: KeyboardEvent) {
+  // 清除之前的超时
+  if (sequenceTimeout.value) {
+    window.clearTimeout(sequenceTimeout.value);
+  }
+
+  // 添加当前按键到序列
+  keySequence.value.push(event.key);
+
+  // 只保留最后 10 个按键
+  if (keySequence.value.length > debugSequence.length) {
+    keySequence.value = keySequence.value.slice(-debugSequence.length);
+  }
+
+  // 检查序列是否匹配
+  const isMatch =
+    keySequence.value.length === debugSequence.length &&
+    keySequence.value.every(
+      (key, index) => key.toLowerCase() === debugSequence[index].toLowerCase()
+    );
+
+  if (isMatch) {
+    console.log("Debug mode activated!");
+    eventBus.emit("enterDebugMode");
+    keySequence.value = []; // 重置序列
+  }
+
+  // 设置超时，如果 2 秒内没有新按键，则重置序列
+  sequenceTimeout.value = window.setTimeout(() => {
+    keySequence.value = [];
+  }, 2000);
+}
+
 onMounted(() => {
   window.addEventListener("beforeunload", handleBeforeUnload);
+  window.addEventListener("keydown", handleDebugMode);
 });
 
 onUnmounted(() => {
   window.removeEventListener("beforeunload", handleBeforeUnload);
+  window.removeEventListener("keydown", handleDebugMode);
+  if (sequenceTimeout.value) {
+    window.clearTimeout(sequenceTimeout.value);
+  }
 });
 </script>
 
 <template>
+  <DebugPane />
   <router-view />
 </template>
 

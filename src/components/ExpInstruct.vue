@@ -60,9 +60,6 @@ onUnmounted(() => {
       alt="Instruction Image"
       class="instruction-image"
     />
-    <!-- <div class="hint-text">
-      {{ page === 3 ? "按空格键开始练习" : "按空格键继续" }}
-    </div> -->
   </div>
 </template>
 

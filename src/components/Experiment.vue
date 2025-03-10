@@ -5,6 +5,7 @@ import { useSpreadingActivationStore } from "@/store/spreadingActivationStore";
 import type { Word, Result } from "@/types/Experiment";
 import { Condition, Answer, ExperimentMode } from "@/types/Experiment";
 import { sleep } from "@/utils/timeUtils";
+import { eventBus } from "@/eventBus";
 
 const props = defineProps<{
   type?: ExperimentMode; // 0: practice, 1: experiment
@@ -21,10 +22,11 @@ const responseTime = ref(0);
 const startTime = ref(0);
 const showPrime = ref(false);
 const isPractice = computed(() => props.type === ExperimentMode.PRACTICE);
+const debugModeActive = ref(false);
 
 const FIXATION_TIME = 1500; // 注视点显示时间（毫秒）
 const PRIME_TIME = 200; // 启动词显示时间（毫秒）
-const FEEDBACK_TIME = 1000; // 反馈显示时间（毫秒，仅在练习模式下显示）
+const FEEDBACK_TIME = 1500; // 反馈显示时间（毫秒，仅在练习模式下显示）
 
 // 初始化试验
 function initTrial(): void {
@@ -55,7 +57,7 @@ async function startTrial(): Promise<void> {
   await sleep(100);
 
   // 显示启动词
-  currentStimulus.value = store.getCurrentStimulus;
+  currentStimulus.value = store.getCurrentStimulusItem(isPractice.value).value;
   showStimulus.value = true;
   showPrime.value = true;
   await sleep(PRIME_TIME);
@@ -86,20 +88,31 @@ async function handleKeyPress(event: KeyboardEvent): Promise<void> {
     return;
 
   // 进入一般情况
-  if (event.key === "f" || event.key === "j") {
+  if (event.key.toLowerCase() === "f" || event.key.toLowerCase() === "j") {
     const endTime = performance.now();
     responseTime.value = endTime - startTime.value;
 
     // 判断正确性
     isCorrect.value =
-      event.key === (currentStimulus.value.answer === Answer.F ? "f" : "j");
+      event.key.toLowerCase() ===
+      (currentStimulus.value.answer === Answer.F ? "f" : "j");
 
     if (props.type === ExperimentMode.PRACTICE) {
       // 练习模式显示反馈
       showFeedback.value = true;
       await sleep(FEEDBACK_TIME);
       showFeedback.value = false;
-      startTrial();
+      const isRoundComplete = store.recordResponse(
+        {} as Result,
+        isPractice.value
+      );
+      console.log("isRoundComplete", isRoundComplete);
+      if (!isRoundComplete) {
+        startTrial();
+      } else {
+        // 完成练习，跳转到正式开始前的准备页面
+        router.push("/prepare-start");
+      }
     } else {
       // 实验模式记录数据
       const result: Result = {
@@ -108,7 +121,7 @@ async function handleKeyPress(event: KeyboardEvent): Promise<void> {
         response: event.key,
         condition: currentStimulus.value.condition,
       };
-      store.recordResponse(result);
+      store.recordResponse(result, isPractice.value);
 
       // 检查是否完成所有试次
       if (store.isExperimentComplete) {
@@ -120,22 +133,125 @@ async function handleKeyPress(event: KeyboardEvent): Promise<void> {
   }
 }
 
+// 处理ESC键退出debug模式
+const lastEscTime = ref(0);
+
+function handleEscKey(event: KeyboardEvent): void {
+  if (event.key === "Escape" && debugModeActive.value) {
+    const now = Date.now();
+    if (now - lastEscTime.value < 1000) {
+      // 1秒内连续按下两次ESC，退出debug模式
+      debugModeActive.value = false;
+      stopAutoKeyPress();
+      console.log("Debug mode deactivated by double ESC");
+    }
+    lastEscTime.value = now;
+  }
+}
+
 onMounted(() => {
   window.addEventListener("keydown", handleKeyPress);
+  window.addEventListener("keydown", handleEscKey);
   startTrial();
 });
 
 onUnmounted(() => {
   window.removeEventListener("keydown", handleKeyPress);
+  window.removeEventListener("keydown", handleEscKey);
+});
+
+// debug 模式，每隔 200±50 ms 按一次 f 或 j 键（各50%概率）
+let debugInterval: number | null = null;
+
+// 创建一个模拟按键的函数
+function simulateKeyPress(key: string) {
+  const keyEvent = new KeyboardEvent("keydown", {
+    key: key,
+    code: key === "f" ? "KeyF" : "KeyJ",
+    keyCode: key === "f" ? 70 : 74,
+    which: key === "f" ? 70 : 74,
+    bubbles: true,
+    cancelable: true,
+  });
+
+  document.dispatchEvent(keyEvent);
+}
+
+// 随机延迟函数，返回 200±50 ms 的随机值
+function getRandomDelay(): number {
+  return 200 + Math.floor(Math.random() * 101) - 50; // 150-250 ms
+}
+
+// 随机选择按键（f或j，各50%概率）
+function getRandomKey(): string {
+  return Math.random() < 0.5 ? "f" : "j";
+}
+
+// 启动自动按键
+function startAutoKeyPress() {
+  if (debugInterval) {
+    clearInterval(debugInterval);
+  }
+
+  // 使用递归setTimeout而不是setInterval，以便每次都有不同的延迟
+  function pressKey() {
+    if (!debugModeActive.value) return;
+
+    // 随机选择按f或j键
+    const key = getRandomKey();
+    simulateKeyPress(key);
+
+    const delay = getRandomDelay();
+    debugInterval = window.setTimeout(pressKey, delay);
+  }
+
+  // 开始第一次按键
+  debugInterval = window.setTimeout(pressKey, getRandomDelay());
+}
+
+// 停止自动按键
+function stopAutoKeyPress() {
+  if (debugInterval) {
+    clearInterval(debugInterval);
+    debugInterval = null;
+  }
+}
+
+// 监听debug模式激活事件
+eventBus.on("enterDebugMode", () => {
+  debugModeActive.value = !debugModeActive.value;
+  console.log(
+    `Debug mode ${debugModeActive.value ? "activated" : "deactivated"}`
+  );
+
+  if (debugModeActive.value) {
+    startAutoKeyPress();
+  } else {
+    stopAutoKeyPress();
+  }
+});
+
+// 确保在组件卸载时清理
+onUnmounted(() => {
+  stopAutoKeyPress();
+  debugModeActive.value = false;
 });
 </script>
 
 <template>
+  <div absolute top-0 right-0>
+    <div>startTime: {{ startTime }}</div>
+    <div>responseTime: {{ responseTime }}</div>
+    <div>isCorrect: {{ isCorrect }}</div>
+    <div v-if="debugModeActive" class="debug-indicator">
+      DEBUG MODE (双击ESC退出)
+    </div>
+  </div>
   <div class="flex flex-col items-center justify-center min-h-screen">
     <div
       v-if="showStimulus && currentStimulus"
-      class="text-6xl font-bold"
-      :class="{ 'text-4xl font-thin': currentStimulus.prime === '+' }"
+      class="text-7xl font-bold"
+      :class="{ 'text-5xl font-thin': currentStimulus.prime === '+' }"
     >
       {{ showPrime ? currentStimulus.prime : currentStimulus.target }}
     </div>
@@ -164,12 +280,10 @@ onUnmounted(() => {
 
 <style lang="scss" scoped>
 .practice-feedback {
-  &.is-correct,
-  &.is-incorrect {
-    &::after {
-      @apply mt-8 text-xl font-bold;
-    }
+  &::after {
+    @apply mt-8 text-xl font-bold;
   }
+
   &.is-correct::before {
     content: "正解です";
     @apply text-green-500;
@@ -177,6 +291,29 @@ onUnmounted(() => {
   &.is-incorrect::before {
     content: "間違います";
     @apply text-red-500;
+  }
+}
+
+.debug-indicator {
+  background-color: rgba(255, 0, 0, 0.7);
+  color: white;
+  padding: 4px 8px;
+  border-radius: 4px;
+  font-weight: bold;
+  font-size: 12px;
+  animation: blink 1s infinite;
+  margin-top: 8px;
+}
+
+@keyframes blink {
+  0% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.5;
+  }
+  100% {
+    opacity: 1;
   }
 }
 </style>

@@ -1,17 +1,17 @@
-export enum ExperimentMode {
+export const enum ExperimentMode {
   PRACTICE = 0,
   EXPERIMENT = 1,
 }
 
-export enum Condition {
-  UR = 0, // unrelated
-  SR = 1, // related
-  NO = 2, // random stimuli
+export const enum Condition {
+  UR = "UR", // unrelated
+  SR = "SR", // related
+  NO = "NO", // random stimuli
 }
 
-export enum Answer {
-  F = 0,
-  J = 1,
+export const enum Answer {
+  F = "F",
+  J = "J",
 }
 
 export type Word = {

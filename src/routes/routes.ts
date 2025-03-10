@@ -23,6 +23,11 @@ const routes: RouteRecordRaw[] = [
     props: route => ({ type: parseInt(route.query.type as string) || 0 }),
   },
   {
+    path: "/prepare-start",
+    name: "PrepareStart",
+    component: () => import("@/components/PrepareStart.vue"),
+  },
+  {
     path: "/end",
     name: "ExperimentEnd",
     component: () => import("@/components/ExperimentEnd.vue"),

@@ -1,6 +1,6 @@
 import { defineStore } from "pinia";
 import { ref, computed } from "vue";
-import { type Word, type Result, Condition, Answer } from "@/types/Experiment";
+import { type Word, type Result } from "@/types/Experiment";
 import { practiceWordList } from "./practiceList";
 import { SRList, NOList, URList } from "./trialList";
 import { cluster, shuffle } from "radashi";
@@ -20,9 +20,9 @@ export const useSpreadingActivationStore = defineStore(
       const UR_LIST_SHUFFLED = shuffle(UR_LIST.value);
 
       // 把三个 List 全部三等分
-      const SrLists = cluster(SR_LIST_SHUFFLED, 10);
-      const NoLists = cluster(NO_LIST_SHUFFLED, 20);
-      const UrLists = cluster(UR_LIST_SHUFFLED, 10);
+      const SrLists = cluster(SR_LIST_SHUFFLED, SR_LIST_SHUFFLED.length / 3);
+      const NoLists = cluster(NO_LIST_SHUFFLED, NO_LIST_SHUFFLED.length / 3);
+      const UrLists = cluster(UR_LIST_SHUFFLED, UR_LIST_SHUFFLED.length / 3);
 
       // 整合成三个 40 个试次的 List
       return SrLists.map((srList, index) => [
@@ -32,54 +32,77 @@ export const useSpreadingActivationStore = defineStore(
       ]);
     });
 
-    const getNextPracticeStimulus = computed(() => {
-      const res = PRACTICE_LIST.value.pop();
-      return res || null;
-    });
-
     const currentTrialRound = ref(0); // 当前试次轮次，0<= x <= 2，大于 2 结束
     const currentTrialIndex = ref(0); // 当前试次索引，0<= x <= 39，大于 39 下一轮
     const trialResponses = ref<Result[]>([]);
     const trialResults = ref<Result[][]>([[], [], []]);
 
-    const getCurrentStimulus = computed(() => {
-      return getFullTrialLists.value[currentTrialRound.value][
-        currentTrialIndex.value
-      ];
-    });
+    const getResults = computed(() => trialResults.value);
+
+    const getCurrentStimulusItem = (isPractice: boolean) => {
+      if (isPractice) {
+        return computed(() => PRACTICE_LIST.value[currentTrialIndex.value]);
+      } else {
+        return computed(
+          () =>
+            getFullTrialLists.value[currentTrialRound.value][
+              currentTrialIndex.value
+            ]
+        );
+      }
+    };
 
     function newRound() {
-      currentTrialRound.value++;
-      currentTrialIndex.value = 0;
       trialResults.value[currentTrialRound.value] = trialResponses.value;
       trialResponses.value = [];
+      currentTrialRound.value++;
+      currentTrialIndex.value = 0;
     }
 
-    function checkNextTrial() {
-      if (currentTrialIndex.value >= 39) {
-        newRound();
+    function checkIsRoundComplete(isPractice: boolean) {
+      if (isPractice) {
+        return currentTrialIndex.value >= PRACTICE_LIST.value.length;
       } else {
-        currentTrialIndex.value++;
+        return (
+          currentTrialIndex.value >=
+          getFullTrialLists.value[currentTrialRound.value].length
+        );
       }
     }
 
-    function recordResponse(response: Result) {
-      trialResponses.value.push(response);
-      checkNextTrial();
+    /**
+     * 记录响应
+     * @param {Result} response 响应
+     * @param {boolean} isPractice 是否为练习
+     * @returns {boolean} 是否完成一轮: boolean
+     */
+    function recordResponse(response: Result, isPractice: boolean) {
+      if (isPractice) {
+      } else {
+        trialResponses.value.push(response);
+      }
+
+      currentTrialIndex.value++;
+      const isRoundComplete = checkIsRoundComplete(isPractice);
+      if (isRoundComplete) {
+        newRound();
+      }
+      return isRoundComplete;
     }
 
     const isExperimentComplete = computed(() => {
-      return currentTrialIndex.value >= PRACTICE_LIST.value.length;
+      return currentTrialRound.value >= 3;
     });
 
     return {
       currentTrialIndex,
+      currentTrialRound,
       practiceList: PRACTICE_LIST,
       fullTrialLists: getFullTrialLists,
-      getCurrentStimulus,
-      getNextPracticeStimulus,
       recordResponse,
       isExperimentComplete,
+      getCurrentStimulusItem,
+      getResults,
     };
   }
 );

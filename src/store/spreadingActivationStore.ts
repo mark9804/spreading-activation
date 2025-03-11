@@ -1,6 +1,6 @@
 import { defineStore } from "pinia";
 import { ref, computed } from "vue";
-import { type Word, type Result } from "@/types/Experiment";
+import { type Word, type Result, GroupType } from "@/types/Experiment";
 import { practiceWordList } from "./practiceList";
 import { SRList, NOList, URList } from "./trialList";
 import { cluster, shuffle } from "radashi";
@@ -15,6 +15,13 @@ export const useSpreadingActivationStore = defineStore(
 
     // 添加 debugMode 状态
     const debugMode = ref(false);
+
+    // 实验组别
+    const groupType = ref<GroupType>(GroupType.A);
+    const getGroupType = computed(() => groupType.value);
+    function setGroupType(value: GroupType) {
+      groupType.value = value;
+    }
 
     const getFullTrialLists = computed(() => {
       // 打乱顺序
@@ -123,6 +130,8 @@ export const useSpreadingActivationStore = defineStore(
       reset,
       setDebugMode,
       isDebugMode,
+      getGroupType,
+      setGroupType,
     };
   }
 );

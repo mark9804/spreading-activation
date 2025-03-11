@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { useSpreadingActivationStore } from "@/store/spreadingActivationStore";
-import { onMounted, onUnmounted, computed } from "vue";
+import { onMounted, onUnmounted } from "vue";
 import { useRoute } from "vue-router";
 import { eventBus } from "@/eventBus";
 import { ref } from "vue";
@@ -18,7 +18,7 @@ function handleBeforeUnload(e: BeforeUnloadEvent) {
     e.preventDefault();
     // 设置确认消息
     const confirmationMessage =
-      "実験は完了していません。ページを閉じると実験が中断されます。\nよろしいですか？";
+      "また実験は完了していません。ページから離れると実験が中断されます。\nよろしいですか？";
     e.returnValue = confirmationMessage; // 标准做法，兼容大多数浏览器
     return confirmationMessage; // 为了兼容旧版浏览器
   }
@@ -39,10 +39,6 @@ const debugSequence = [
 ];
 const keySequence = ref<string[]>([]);
 const sequenceTimeout = ref<number | null>(null);
-
-const isDebugMode = computed(() => {
-  return import.meta.env.DEV;
-});
 
 function handleDebugMode(event: KeyboardEvent) {
   // 清除之前的超时
@@ -92,7 +88,6 @@ onUnmounted(() => {
 </script>
 
 <template>
-  <DebugPane v-if="isDebugMode" />
   <router-view />
 </template>
 

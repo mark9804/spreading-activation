@@ -5,6 +5,7 @@ import { isNumber } from "radashi";
 import INST1 from "@/assets/INST1.jpg";
 import INST2 from "@/assets/INST2.jpg";
 import INST3 from "@/assets/INST3.jpg";
+import DebugPane from "./DebugPane.vue";
 
 const props = defineProps<{
   page: number;
@@ -54,6 +55,8 @@ onUnmounted(() => {
 </script>
 
 <template>
+  <DebugPane />
+
   <div class="instruction-container">
     <img
       :src="instructionContent.image"

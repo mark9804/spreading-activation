@@ -10,6 +10,11 @@ const isPractice = computed(() => {
   return router.currentRoute.value.query.type === "0";
 });
 
+// 检查是否为开发环境且 debug 模式已激活
+const isDebugVisible = computed(() => {
+  return store.isDebugMode;
+});
+
 // 接收从父组件传递的属性
 defineProps<{
   startTime?: number;
@@ -21,7 +26,7 @@ defineProps<{
 
 <template>
   <div
-    v-if="store.isDebugMode"
+    v-if="isDebugVisible"
     absolute
     top-0
     left-0
@@ -49,7 +54,15 @@ defineProps<{
     <div>target: {{ currentStimulus?.target }}</div>
     <div>condition: {{ currentStimulus?.condition }}</div>
     <div>isCorrect: {{ isCorrect }}</div>
-    <div class="debug-indicator" w-fit text-white px-2 py-1 font-bold mt-2>
+    <div
+      class="debug-indicator"
+      text-center
+      text-white
+      px-2
+      py-1
+      font-bold
+      mt-2
+    >
       DEBUG MODE (双击ESC退出)
     </div>
   </div>

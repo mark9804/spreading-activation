@@ -2,6 +2,9 @@
 import { useRouter } from "vue-router";
 import { onMounted, onUnmounted, computed } from "vue";
 import { useSpreadingActivationStore } from "@/store/spreadingActivationStore";
+import DebugPane from "./DebugPane.vue";
+import { setupDebugEvents } from "@/utils/debugEvents";
+import { setupEscKeyHandler } from "@/utils/debugUtils";
 
 const router = useRouter();
 const store = useSpreadingActivationStore();
@@ -14,8 +17,19 @@ const handleKeyPress = (event: KeyboardEvent) => {
   }
 };
 
+// 设置事件监听器和清理函数
+let cleanupEscHandler: (() => void) | null = null;
+let cleanupDebugEvents: (() => void) | null = null;
+
 onMounted(() => {
   window.addEventListener("keydown", handleKeyPress);
+
+  // 设置 ESC 键处理
+  cleanupEscHandler = setupEscKeyHandler();
+
+  // 设置 debug 事件监听
+  cleanupDebugEvents = setupDebugEvents();
+
   if (isDebugMode.value) {
     // 等待 1000ms 后，自动跳转
     setTimeout(() => {
@@ -23,8 +37,19 @@ onMounted(() => {
     }, 1000);
   }
 });
+
 onUnmounted(() => {
   window.removeEventListener("keydown", handleKeyPress);
+
+  // 清理 ESC 键处理
+  if (cleanupEscHandler) {
+    cleanupEscHandler();
+  }
+
+  // 清理 debug 事件监听
+  if (cleanupDebugEvents) {
+    cleanupDebugEvents();
+  }
 });
 </script>
 

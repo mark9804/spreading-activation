@@ -52,7 +52,7 @@ routerConvert.beforeEach((to, from, next) => {
       !to.path.includes("/prepare-start")
     ) {
       const confirmed = window.confirm(
-        "実験は完了していません。ページを閉じると実験が中断されます。\nよろしいですか？"
+        "また実験は完了していません。ページから離れると実験が中断されます。\nよろしいですか？"
       );
       if (confirmed) {
         next(); // 用户确认离开

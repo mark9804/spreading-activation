@@ -3,6 +3,14 @@ export const enum ExperimentMode {
   EXPERIMENT = 1,
 }
 
+// 实验组别
+// A 组左手（F）是无意味，右手（J）是有意味；
+// B 组左手（J）是有意味，右手（F）是无意味；
+export const enum GroupType {
+  A = "A",
+  B = "B",
+}
+
 export const enum Condition {
   UR = "UR", // unrelated
   SR = "SR", // related
@@ -23,6 +31,7 @@ export type Word = {
 };
 
 export type Result = {
+  group: GroupType;
   prime: string;
   target: string;
   response: string;

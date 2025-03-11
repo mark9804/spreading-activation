@@ -6,6 +6,7 @@ import { useSpreadingActivationStore } from "@/store/spreadingActivationStore";
 import { computed } from "vue";
 import { flat } from "radashi";
 import { useRouter } from "vue-router";
+import { settings } from "@/settings";
 
 const useStore = useSpreadingActivationStore();
 const router = useRouter();
@@ -52,15 +53,18 @@ function handleBackToHome() {
     router.push("/");
   }
 }
+
+function handleOpenForm() {
+  window.open(settings.formUrl, "_blank");
+}
 </script>
 
 <template>
   <div flex flex-col items-center justify-center h-screen>
     <h1 text-4xl font-bold>実験課題はこれで終わります</h1>
     <div mt-4 text-lg flex flex-col items-center justify-center gap-5>
-      <a-button type="primary" @click="handleExport">
-        データをエクセルで出力
-      </a-button>
+      <a-button @click="handleExport"> ①データをエクセルで出力 </a-button>
+      <a-button @click="handleOpenForm"> ②フォームズに回答する </a-button>
       <a-button
         type="dashed"
         status="danger"

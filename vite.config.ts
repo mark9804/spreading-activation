@@ -9,7 +9,7 @@ import Components from "unplugin-vue-components/vite";
 import {
   presetAttributify,
   presetIcons,
-  presetUno,
+  presetWind3,
   transformerDirectives,
 } from "unocss";
 import vueDevTools from "vite-plugin-vue-devtools";
@@ -35,7 +35,7 @@ export default defineConfig({
     vueDevTools(),
     UnoCSS({
       presets: [
-        presetUno(),
+        presetWind3(),
         presetIcons({
           extraProperties: {
             display: "inline-block",

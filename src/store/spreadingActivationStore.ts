@@ -13,6 +13,9 @@ export const useSpreadingActivationStore = defineStore(
     const NO_LIST = ref<Word[]>(NOList); // 长度30
     const UR_LIST = ref<Word[]>(URList); // 长度60
 
+    // 添加 debugMode 状态
+    const debugMode = ref(false);
+
     const getFullTrialLists = computed(() => {
       // 打乱顺序
       const SR_LIST_SHUFFLED = shuffle(SR_LIST.value);
@@ -94,6 +97,22 @@ export const useSpreadingActivationStore = defineStore(
       return currentTrialRound.value >= 3;
     });
 
+    function reset() {
+      currentTrialIndex.value = 0;
+      currentTrialRound.value = 0;
+      trialResponses.value = [];
+      trialResults.value = [[], [], []];
+      debugMode.value = false; // 重置时也重置 debugMode
+    }
+
+    // 设置 debugMode 的方法
+    function setDebugMode(value: boolean) {
+      debugMode.value = value;
+    }
+
+    // 获取 debugMode 的计算属性
+    const isDebugMode = computed(() => debugMode.value);
+
     return {
       currentTrialIndex,
       currentTrialRound,
@@ -103,6 +122,9 @@ export const useSpreadingActivationStore = defineStore(
       isExperimentComplete,
       getCurrentStimulusItem,
       getResults,
+      reset,
+      setDebugMode,
+      isDebugMode,
     };
   }
 );

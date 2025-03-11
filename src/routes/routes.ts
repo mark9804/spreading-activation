@@ -40,25 +40,31 @@ const routerConvert = createRouter({
 });
 
 // 添加全局导航守卫
-// routerConvert.beforeEach((to, from, next) => {
-//   // 检查是否从实验页面离开
-//   if (from.path.includes("/experiment")) {
-//     const store = useSpreadingActivationStore();
+routerConvert.beforeEach((to, from, next) => {
+  // 检查是否从实验页面离开
+  if (from.path.includes("/experiment")) {
+    const store = useSpreadingActivationStore();
 
-//     // 如果实验未完成且不是导航到结束页面，则显示确认对话框
-//     if (!store.isExperimentComplete && !to.path.includes("/end")) {
-//       const confirmed = window.confirm("実験は完了していません。ページを閉じると実験が中断されます。\nよろしいですか？");
-//       if (confirmed) {
-//         next(); // 用户确认离开
-//       } else {
-//         next(false); // 取消导航
-//       }
-//     } else {
-//       next(); // 实验已完成或导航到结束页面，允许离开
-//     }
-//   } else {
-//     next(); // 不是从实验页面离开，允许导航
-//   }
-// });
+    // 如果实验未完成且不是导航到结束页面或准备开始页面，则显示确认对话框
+    if (
+      !store.isExperimentComplete &&
+      !to.path.includes("/end") &&
+      !to.path.includes("/prepare-start")
+    ) {
+      const confirmed = window.confirm(
+        "実験は完了していません。ページを閉じると実験が中断されます。\nよろしいですか？"
+      );
+      if (confirmed) {
+        next(); // 用户确认离开
+      } else {
+        next(false); // 取消导航
+      }
+    } else {
+      next(); // 实验已完成或导航到结束页面或准备开始页面，允许离开
+    }
+  } else {
+    next(); // 不是从实验页面离开，允许导航
+  }
+});
 
 export { routerConvert, routes };

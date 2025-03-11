@@ -26,5 +26,7 @@ export type Result = {
   prime: string;
   target: string;
   response: string;
+  responseTime: number;
   condition: Condition;
+  isCorrect: boolean;
 };

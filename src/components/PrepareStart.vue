@@ -1,7 +1,12 @@
 <script setup lang="ts">
 import { useRouter } from "vue-router";
-import { onMounted, onUnmounted } from "vue";
+import { onMounted, onUnmounted, computed } from "vue";
+import { useSpreadingActivationStore } from "@/store/spreadingActivationStore";
+
 const router = useRouter();
+const store = useSpreadingActivationStore();
+
+const isDebugMode = computed(() => store.isDebugMode);
 
 const handleKeyPress = (event: KeyboardEvent) => {
   if (event.code === "Space") {
@@ -11,6 +16,12 @@ const handleKeyPress = (event: KeyboardEvent) => {
 
 onMounted(() => {
   window.addEventListener("keydown", handleKeyPress);
+  if (isDebugMode.value) {
+    // 等待 1000ms 后，自动跳转
+    setTimeout(() => {
+      router.push("/experiment?type=1");
+    }, 1000);
+  }
 });
 onUnmounted(() => {
   window.removeEventListener("keydown", handleKeyPress);

@@ -1,18 +1,35 @@
 <script setup lang="ts">
 import { ref, onMounted, onUnmounted, computed } from "vue";
-import { useRouter } from "vue-router";
+import { useRouter, useRoute } from "vue-router";
 import { useSpreadingActivationStore } from "@/store/spreadingActivationStore";
 import type { Word, Result } from "@/types/Experiment";
 import { Condition, Answer, ExperimentMode } from "@/types/Experiment";
 import { sleep } from "@/utils/timeUtils";
 import { eventBus } from "@/eventBus";
 
-const props = defineProps<{
-  type?: ExperimentMode; // 0: practice, 1: experiment
-}>();
+const route = useRoute();
+const props = withDefaults(
+  defineProps<{
+    type?: ExperimentMode; // 0: practice, 1: experiment
+    debugMode?: boolean;
+  }>(),
+  {
+    debugMode: false,
+  }
+);
+
+// 从 URL 查询参数中获取 debugMode
+const urlDebugMode = computed(() => {
+  return route.query.debugMode === "true";
+});
 
 const router = useRouter();
 const store = useSpreadingActivationStore();
+
+// 在开发环境下，如果 props 或 URL 中有 debugMode，则设置 store 中的 debugMode
+if (import.meta.env.DEV && (props.debugMode || urlDebugMode.value)) {
+  store.setDebugMode(true);
+}
 
 const showStimulus = ref(false);
 const showFeedback = ref(false);
@@ -22,7 +39,7 @@ const responseTime = ref(0);
 const startTime = ref(0);
 const showPrime = ref(false);
 const isPractice = computed(() => props.type === ExperimentMode.PRACTICE);
-const debugModeActive = ref(false);
+const debugModeActive = ref(store.isDebugMode);
 
 const FIXATION_TIME = 1500; // 注视点显示时间（毫秒）
 const PRIME_TIME = 200; // 启动词显示时间（毫秒）
@@ -106,7 +123,6 @@ async function handleKeyPress(event: KeyboardEvent): Promise<void> {
         {} as Result,
         isPractice.value
       );
-      console.log("isRoundComplete", isRoundComplete);
       if (!isRoundComplete) {
         startTrial();
       } else {
@@ -119,7 +135,9 @@ async function handleKeyPress(event: KeyboardEvent): Promise<void> {
         prime: currentStimulus.value.prime,
         target: currentStimulus.value.target,
         response: event.key,
+        responseTime: responseTime.value,
         condition: currentStimulus.value.condition,
+        isCorrect: isCorrect.value,
       };
       store.recordResponse(result, isPractice.value);
 
@@ -135,6 +153,9 @@ async function handleKeyPress(event: KeyboardEvent): Promise<void> {
 
 // 处理ESC键退出debug模式
 const lastEscTime = ref(0);
+const isDebugMode = computed(() => {
+  return import.meta.env.DEV;
+});
 
 function handleEscKey(event: KeyboardEvent): void {
   if (event.key === "Escape" && debugModeActive.value) {
@@ -142,6 +163,7 @@ function handleEscKey(event: KeyboardEvent): void {
     if (now - lastEscTime.value < 1000) {
       // 1秒内连续按下两次ESC，退出debug模式
       debugModeActive.value = false;
+      store.setDebugMode(false);
       stopAutoKeyPress();
       console.log("Debug mode deactivated by double ESC");
     }
@@ -220,9 +242,7 @@ function stopAutoKeyPress() {
 // 监听debug模式激活事件
 eventBus.on("enterDebugMode", () => {
   debugModeActive.value = !debugModeActive.value;
-  console.log(
-    `Debug mode ${debugModeActive.value ? "activated" : "deactivated"}`
-  );
+  store.setDebugMode(debugModeActive.value);
 
   if (debugModeActive.value) {
     startAutoKeyPress();
@@ -239,13 +259,14 @@ onUnmounted(() => {
 </script>
 
 <template>
-  <div absolute top-0 right-0>
+  <div v-if="isDebugMode && debugModeActive" absolute top-0 right-0>
     <div>startTime: {{ startTime }}</div>
     <div>responseTime: {{ responseTime }}</div>
+    <div>prime: {{ currentStimulus?.prime }}</div>
+    <div>target: {{ currentStimulus?.target }}</div>
+    <div>condition: {{ currentStimulus?.condition }}</div>
     <div>isCorrect: {{ isCorrect }}</div>
-    <div v-if="debugModeActive" class="debug-indicator">
-      DEBUG MODE (双击ESC退出)
-    </div>
+    <div class="debug-indicator w-fit px-4">DEBUG MODE (双击ESC退出)</div>
   </div>
   <div class="flex flex-col items-center justify-center min-h-screen">
     <div

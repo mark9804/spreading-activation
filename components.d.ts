@@ -8,6 +8,7 @@ export {}
 /* prettier-ignore */
 declare module 'vue' {
   export interface GlobalComponents {
+    AButton: typeof import('@arco-design/web-vue')['Button']
     DebugPane: typeof import('./src/components/DebugPane.vue')['default']
     Experiment: typeof import('./src/components/Experiment.vue')['default']
     ExperimentEnd: typeof import('./src/components/ExperimentEnd.vue')['default']

@@ -23,6 +23,7 @@ const isPractice = computed(() => {
         }})
       </div>
       <div>isExperimentComplete: {{ store.isExperimentComplete }}</div>
+      <div>isDebugMode: {{ store.isDebugMode }}</div>
     </div>
   </div>
 </template>

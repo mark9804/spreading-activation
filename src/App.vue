@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { useSpreadingActivationStore } from "@/store/spreadingActivationStore";
-import { onMounted, onUnmounted } from "vue";
+import { onMounted, onUnmounted, computed } from "vue";
 import { useRoute } from "vue-router";
 import { eventBus } from "@/eventBus";
 import { ref } from "vue";
@@ -11,16 +11,17 @@ const route = useRoute();
 // 处理页面关闭事件
 function handleBeforeUnload(e: BeforeUnloadEvent) {
   // 只有在实验页面且实验未完成时才显示确认对话框
-  // const isExperimentRoute = route.path.includes("/experiment");
-  // const isExperimentInProgress =
-  //   isExperimentRoute && !store.isExperimentComplete;
-  // if (isExperimentInProgress) {
-  //   e.preventDefault();
-  //   // 设置确认消息
-  //   const confirmationMessage = "実験は完了していません。ページを閉じると実験が中断されます。\nよろしいですか？";
-  //   e.returnValue = confirmationMessage; // 标准做法，兼容大多数浏览器
-  //   return confirmationMessage; // 为了兼容旧版浏览器
-  // }
+  const isExperimentRoute = route.path.includes("/experiment");
+  const isExperimentInProgress =
+    isExperimentRoute && !store.isExperimentComplete;
+  if (isExperimentInProgress) {
+    e.preventDefault();
+    // 设置确认消息
+    const confirmationMessage =
+      "実験は完了していません。ページを閉じると実験が中断されます。\nよろしいですか？";
+    e.returnValue = confirmationMessage; // 标准做法，兼容大多数浏览器
+    return confirmationMessage; // 为了兼容旧版浏览器
+  }
 }
 
 // 按 「上上下下左右左右BA」 进入 debug 模式
@@ -38,6 +39,10 @@ const debugSequence = [
 ];
 const keySequence = ref<string[]>([]);
 const sequenceTimeout = ref<number | null>(null);
+
+const isDebugMode = computed(() => {
+  return import.meta.env.DEV;
+});
 
 function handleDebugMode(event: KeyboardEvent) {
   // 清除之前的超时
@@ -87,7 +92,7 @@ onUnmounted(() => {
 </script>
 
 <template>
-  <DebugPane />
+  <DebugPane v-if="isDebugMode" />
   <router-view />
 </template>
 

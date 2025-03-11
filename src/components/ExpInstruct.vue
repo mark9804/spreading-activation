@@ -1,5 +1,5 @@
-<script setup lang="ts">
-import { computed, onMounted, onUnmounted } from "vue";
+<script setup lang="tsx">
+import { computed, onMounted, onUnmounted, Fragment } from "vue";
 import { useRouter } from "vue-router";
 import { isNumber } from "radashi";
 import INST1 from "@/assets/INST1.jpg";
@@ -16,30 +16,64 @@ const router = useRouter();
 const instructionContent = computed(() => {
   switch (props.page) {
     case 1:
-      return {
-        image: INST1,
-      };
+      return (
+        <Fragment>
+          <h1>説明</h1>
+          <img src={INST1} class="instruction-image" alt="Instruction Image" />
+        </Fragment>
+      );
     case 2:
-      return {
-        image: INST2,
-      };
+      return (
+        <Fragment>
+          <h1>説明</h1>
+          <img src={INST2} class="instruction-image" alt="Instruction Image" />
+        </Fragment>
+      );
     case 3:
-      return {
-        image: INST3,
-      };
+      return (
+        <Fragment>
+          <h1>説明</h1>
+          <img src={INST3} class="instruction-image" alt="Instruction Image" />
+        </Fragment>
+      );
+    case 4:
+      return (
+        <Fragment>
+          <h1 class="text-center mb-6">これから練習が始まります</h1>
+          <div class="text-xl flex flex-col gap-2">
+            <p>
+              <kbd>F</kbd>キーに左手の人差し指を、
+            </p>
+            <p>
+              <kbd>J</kbd>キーに右手の人差し指を、軽く乗せてください。
+            </p>
+            <br />
+            <p>
+              「<b>両方とも有意義語の場合</b>」は<kbd>F</kbd>キー、
+            </p>
+            <p>
+              「<b>片方でも無意味つづりがある場合</b>」は<kbd>J</kbd>キーです。
+            </p>
+            <br />
+            <p>刺激を見逃さないように、集中して課題に取り組んでください。</p>
+            <br />
+            <p>
+              <kbd>スペース</kbd>キーを押すと、練習が始まります。
+            </p>
+          </div>
+        </Fragment>
+      );
     default:
-      return {
-        image: INST1,
-      };
+      return <img src={INST1} alt="Instruction Image" />;
   }
 });
 
 const handleKeyPress = (event: KeyboardEvent) => {
   if (event.code === "Space") {
     event.preventDefault(); // 防止页面滚动
-    if (props.page >= 3 || !isNumber(props.page)) {
+    if (props.page >= 4 || !isNumber(props.page)) {
       router.push("/experiment?type=0");
-    } else if (props.page < 3) {
+    } else if (props.page < 4) {
       router.push(`/instruction?page=${props.page + 1}`);
     }
   }
@@ -57,12 +91,12 @@ onUnmounted(() => {
 <template>
   <DebugPane />
 
-  <div class="instruction-container">
-    <img
-      :src="instructionContent.image"
-      alt="Instruction Image"
-      class="instruction-image"
-    />
+  <div class="instruction-container flex flex-col items-center justify-center">
+    <instructionContent />
+  </div>
+
+  <div class="fixed bottom-8 text-center w-full text-xl">
+    <kbd>スペース</kbd>キーを押して続く
   </div>
 </template>
 
@@ -88,5 +122,8 @@ onUnmounted(() => {
     color: #666;
     text-align: center;
   }
+}
+kbd {
+  @apply mx-1 px-3 py-1 bg-gray-400 rounded font-bold;
 }
 </style>

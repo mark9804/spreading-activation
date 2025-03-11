@@ -1,4 +1,4 @@
-import { Answer, Condition } from "@/types/Experiment";
+import { Condition } from "@/types/Experiment";
 import type { Word } from "@/types/Experiment";
 import { GroupType } from "@/types/Experiment";
 

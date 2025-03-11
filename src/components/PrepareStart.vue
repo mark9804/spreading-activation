@@ -29,6 +29,7 @@ onUnmounted(() => {
 </script>
 
 <template>
+  <DebugPane />
   <div class="flex flex-col items-center justify-center h-screen">
     <h1 class="text-4xl font-bold">練習はこれで終わります</h1>
     <div mt-4 text-lg flex items-center justify-center>

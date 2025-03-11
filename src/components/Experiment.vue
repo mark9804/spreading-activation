@@ -153,9 +153,6 @@ async function handleKeyPress(event: KeyboardEvent): Promise<void> {
 
 // 处理ESC键退出debug模式
 const lastEscTime = ref(0);
-const isDebugMode = computed(() => {
-  return import.meta.env.DEV;
-});
 
 function handleEscKey(event: KeyboardEvent): void {
   if (event.key === "Escape" && debugModeActive.value) {
@@ -258,20 +255,17 @@ eventBus.on("enterDebugMode", () => {
 // 确保在组件卸载时清理
 onUnmounted(() => {
   stopAutoKeyPress();
-  store.setDebugMode(false);
 });
 </script>
 
 <template>
-  <div v-if="isDebugMode && debugModeActive" absolute top-0 right-0>
-    <div>startTime: {{ startTime }}</div>
-    <div>responseTime: {{ responseTime }}</div>
-    <div>prime: {{ currentStimulus?.prime }}</div>
-    <div>target: {{ currentStimulus?.target }}</div>
-    <div>condition: {{ currentStimulus?.condition }}</div>
-    <div>isCorrect: {{ isCorrect }}</div>
-    <div class="debug-indicator w-fit px-4">DEBUG MODE (双击ESC退出)</div>
-  </div>
+  <DebugPane
+    :start-time="startTime"
+    :response-time="responseTime"
+    :current-stimulus="currentStimulus"
+    :is-correct="isCorrect"
+  />
+
   <div class="flex flex-col items-center justify-center min-h-screen">
     <div
       v-if="showStimulus && currentStimulus"
@@ -316,29 +310,6 @@ onUnmounted(() => {
   &.is-incorrect::before {
     content: "間違います";
     @apply text-red-500;
-  }
-}
-
-.debug-indicator {
-  background-color: rgba(255, 0, 0, 0.7);
-  color: white;
-  padding: 4px 8px;
-  border-radius: 4px;
-  font-weight: bold;
-  font-size: 12px;
-  animation: blink 1s infinite;
-  margin-top: 8px;
-}
-
-@keyframes blink {
-  0% {
-    opacity: 1;
-  }
-  50% {
-    opacity: 0.5;
-  }
-  100% {
-    opacity: 1;
   }
 }
 </style>

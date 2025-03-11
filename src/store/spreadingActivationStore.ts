@@ -28,11 +28,9 @@ export const useSpreadingActivationStore = defineStore(
       const UrLists = cluster(UR_LIST_SHUFFLED, UR_LIST_SHUFFLED.length / 3);
 
       // 整合成三个 40 个试次的 List
-      return SrLists.map((srList, index) => [
-        ...srList,
-        ...NoLists[index],
-        ...UrLists[index],
-      ]);
+      return SrLists.map((srList, index) =>
+        shuffle([...srList, ...NoLists[index], ...UrLists[index]])
+      );
     });
 
     const currentTrialRound = ref(0); // 当前试次轮次，0<= x <= 2，大于 2 结束

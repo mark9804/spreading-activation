@@ -39,7 +39,7 @@ const responseTime = ref(0);
 const startTime = ref(0);
 const showPrime = ref(false);
 const isPractice = computed(() => props.type === ExperimentMode.PRACTICE);
-const debugModeActive = ref(store.isDebugMode);
+const debugModeActive = computed(() => store.isDebugMode);
 
 const FIXATION_TIME = 1500; // 注视点显示时间（毫秒）
 const PRIME_TIME = 200; // 启动词显示时间（毫秒）
@@ -162,7 +162,6 @@ function handleEscKey(event: KeyboardEvent): void {
     const now = Date.now();
     if (now - lastEscTime.value < 1000) {
       // 1秒内连续按下两次ESC，退出debug模式
-      debugModeActive.value = false;
       store.setDebugMode(false);
       stopAutoKeyPress();
       console.log("Debug mode deactivated by double ESC");
@@ -175,6 +174,11 @@ onMounted(() => {
   window.addEventListener("keydown", handleKeyPress);
   window.addEventListener("keydown", handleEscKey);
   startTrial();
+
+  // 如果 debug 模式已激活，则自动启动自动按键
+  if (debugModeActive.value) {
+    startAutoKeyPress();
+  }
 });
 
 onUnmounted(() => {
@@ -241,8 +245,8 @@ function stopAutoKeyPress() {
 
 // 监听debug模式激活事件
 eventBus.on("enterDebugMode", () => {
-  debugModeActive.value = !debugModeActive.value;
-  store.setDebugMode(debugModeActive.value);
+  // 切换 debug 模式
+  store.setDebugMode(!debugModeActive.value);
 
   if (debugModeActive.value) {
     startAutoKeyPress();
@@ -254,7 +258,7 @@ eventBus.on("enterDebugMode", () => {
 // 确保在组件卸载时清理
 onUnmounted(() => {
   stopAutoKeyPress();
-  debugModeActive.value = false;
+  store.setDebugMode(false);
 });
 </script>
 

@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { ref, onMounted, onUnmounted, computed } from "vue";
-import { useRouter, useRoute } from "vue-router";
+import { useRouter } from "vue-router";
 import { useSpreadingActivationStore } from "@/store/spreadingActivationStore";
 import type { Word, Result } from "@/types/Experiment";
 import { Condition, Answer, ExperimentMode } from "@/types/Experiment";
@@ -18,27 +18,20 @@ import {
 } from "@/utils/experimentUtils";
 import DebugPane from "./DebugPane.vue";
 
-const route = useRoute();
 const props = withDefaults(
   defineProps<{
     type?: ExperimentMode; // 0: practice, 1: experiment
-    debugMode?: boolean;
   }>(),
-  {
-    debugMode: false,
-  }
+  {}
 );
-
-// 从 URL 查询参数中获取 debugMode
-const urlDebugMode = computed(() => {
-  return route.query.debugMode === "true";
-});
 
 const router = useRouter();
 const store = useSpreadingActivationStore();
 
-// 初始化 debug 模式
-initDebugMode(props.debugMode || urlDebugMode.value);
+// 初始化 debug 模式。store 会从 sessionStorage 加载状态。
+// initDebugMode 的调用现在更多是日志记录或边缘情况处理。
+// 不再需要传递参数，因为 store.isDebugMode 是主要来源。
+initDebugMode();
 
 const showStimulus = ref(false);
 const showFeedback = ref(false);
@@ -175,7 +168,7 @@ onMounted(() => {
   // 设置 debug 事件监听
   cleanupDebugEvents = setupDebugEvents();
 
-  // 检查并启动 debug 模式
+  // 检查并启动 debug 模式 (依赖 store.isDebugMode)
   checkAndStartDebugMode();
 
   // 如果是正式实验模式，重置试次索引（因为练习完成后索引可能不是0）

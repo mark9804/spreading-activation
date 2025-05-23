@@ -70,11 +70,6 @@ export function startAutoKeyPress() {
         simulateKeyPress(key);
         keyPressCount++;
 
-        // 记录按键情况，每10次打印一次
-        if (keyPressCount % 10 === 0) {
-          console.log(`已自动按键 ${keyPressCount} 次`);
-        }
-
         const now = Date.now();
         lastPressTime = now;
         consecutiveErrorCount = 0;
@@ -138,11 +133,31 @@ export function setupEscKeyHandler() {
 }
 
 // 初始化 debug 模式
-export function initDebugMode(isDebugMode: boolean) {
+export function initDebugMode(isDebugModeFromUrlOrProps?: boolean) {
   const store = useSpreadingActivationStore();
 
-  if (import.meta.env.DEV && isDebugMode) {
-    store.setDebugMode(true);
+  // store 初始化时已经从 sessionStorage 读取了 debugMode
+  // 此函数现在更多用于日志记录或在特定条件下（如组合键）强制设置
+
+  if (isDebugModeFromUrlOrProps && !store.isDebugMode) {
+    console.log(
+      "Debug mode was explicitly passed via props/URL, but store.isDebugMode is false. Setting it to true."
+    );
+    store.setDebugMode(true); // 如果外部强制指定，则设置
+  } else if (store.isDebugMode) {
+    console.log(
+      "Debug mode is active (loaded from sessionStorage or previously set)."
+    );
+  } else {
+    console.log("Debug mode is not active.");
+  }
+
+  // 开发环境下的特定逻辑可以保留，但不应无条件覆盖 sessionStorage 的状态
+  if (import.meta.env.DEV && !store.isDebugMode) {
+    // 例如，可以在这里提示开发者如何通过组合键激活（如果实现了该功能）
+    console.log(
+      "DEV environment: Debug mode is not active. (Can be activated via key combination or by setting it in store/sessionStorage)"
+    );
   }
 }
 
@@ -150,10 +165,15 @@ export function initDebugMode(isDebugMode: boolean) {
 export function checkAndStartDebugMode() {
   const store = useSpreadingActivationStore();
 
-  if (import.meta.env.DEV && store.isDebugMode) {
+  if (store.isDebugMode) {
+    console.log(
+      "Debug mode is active in store, attempting to start auto key press..."
+    );
     startAutoKeyPress();
     return true;
   }
-
+  console.log(
+    "Debug mode is not active in store. Auto key press will not start."
+  );
   return false;
 }

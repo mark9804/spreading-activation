@@ -13,6 +13,7 @@ const isDebugMode = computed(() => store.isDebugMode);
 
 const handleKeyPress = (event: KeyboardEvent) => {
   if (event.code === "Space") {
+    // 不再通过 URL 传递 debugMode
     router.push("/experiment?type=1");
   }
 };
@@ -31,7 +32,7 @@ onMounted(() => {
   cleanupDebugEvents = setupDebugEvents();
 
   if (isDebugMode.value) {
-    // 等待 1000ms 后，自动跳转
+    // 等待 1000ms 后，自动跳转, 也不再通过URL传递 debugMode
     setTimeout(() => {
       router.push("/experiment?type=1");
     }, 1000);

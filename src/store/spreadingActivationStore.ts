@@ -13,8 +13,9 @@ export const useSpreadingActivationStore = defineStore(
     const NO_LIST = ref<Word[]>(NOList); // 长度30
     const UR_LIST = ref<Word[]>(URList); // 长度60
 
-    // 添加 debugMode 状态
-    const debugMode = ref(false);
+    // 从 sessionStorage 初始化 debugMode，如果没有则默认为 false
+    const initialDebugMode = sessionStorage.getItem("isDebugMode") === "true";
+    const debugMode = ref<boolean>(initialDebugMode);
 
     // 实验组别
     const groupType = ref<GroupType>(GroupType.B);
@@ -142,12 +143,21 @@ export const useSpreadingActivationStore = defineStore(
       currentTrialRound.value = 0;
       trialResponses.value = [];
       trialResults.value = [[], [], []];
-      debugMode.value = false; // 重置时也重置 debugMode
+      // reset 时不改变 sessionStorage 中的 debugMode，允许调试状态跨重置持续
+      // debugMode.value = false;
+      // sessionStorage.removeItem("isDebugMode");
     }
 
     // 设置 debugMode 的方法
     function setDebugMode(value: boolean) {
       debugMode.value = value;
+      if (value) {
+        sessionStorage.setItem("isDebugMode", "true");
+        console.log("Debug mode activated and saved to sessionStorage.");
+      } else {
+        sessionStorage.removeItem("isDebugMode");
+        console.log("Debug mode deactivated and removed from sessionStorage.");
+      }
     }
 
     // 获取 debugMode 的计算属性
@@ -209,6 +219,7 @@ export const useSpreadingActivationStore = defineStore(
       resetTrialIndex,
       finalizeExperiment,
       resetExperimentState,
+      debugMode, // 直接导出 ref
     };
   }
 );

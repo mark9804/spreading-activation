@@ -63,10 +63,13 @@ export const useSpreadingActivationStore = defineStore(
     function newRound() {
       // 创建 trialResponses 的副本，而不是直接赋值引用
       trialResults.value[currentTrialRound.value] = [...trialResponses.value];
+      console.log(
+        `第${currentTrialRound.value}轮数据已保存: ${trialResults.value[currentTrialRound.value].length}个`
+      );
+
       trialResponses.value = [];
       currentTrialRound.value++;
       currentTrialIndex.value = 0;
-      console.log(`Started round ${currentTrialRound.value}`);
     }
 
     function checkIsRoundComplete(isPractice: boolean) {
@@ -89,17 +92,25 @@ export const useSpreadingActivationStore = defineStore(
     function recordResponse(response: Result, isPractice: boolean) {
       if (isPractice) {
         // 练习模式：只增加索引，不记录数据，也不调用newRound
+        currentTrialIndex.value++;
       } else {
+        // 特别检查第一个响应
+        if (currentTrialRound.value === 0 && currentTrialIndex.value === 0) {
+          console.log(`🔥 记录第0轮第0个试次响应`);
+        }
+
         trialResponses.value.push(response);
+
+        // 在非练习模式下增加索引
+        currentTrialIndex.value++;
       }
 
-      currentTrialIndex.value++;
       const isRoundComplete = checkIsRoundComplete(isPractice);
 
       if (isRoundComplete && !isPractice) {
         // 只有在非练习模式下才调用newRound
         console.log(
-          `Round ${currentTrialRound.value} completed with ${trialResponses.value.length} responses. Starting new round.`
+          `第${currentTrialRound.value}轮完成，共${trialResponses.value.length}个响应`
         );
         newRound();
       }
@@ -146,8 +157,38 @@ export const useSpreadingActivationStore = defineStore(
 
     // 在正式实验开始前重置试次索引（练习完成后可能不是0）
     function resetTrialIndex() {
-      console.log(`Resetting trial index from ${currentTrialIndex.value} to 0`);
+      console.log(`重置试次索引: ${currentTrialIndex.value} -> 0`);
       currentTrialIndex.value = 0;
+    }
+
+    // 完全重置实验状态，确保从干净状态开始
+    function resetExperimentState() {
+      console.log("重置实验状态");
+      currentTrialRound.value = 0;
+      currentTrialIndex.value = 0;
+      trialResponses.value = [];
+      // 不重置 trialResults，因为可能已经有之前的数据
+    }
+
+    // 确保实验结束时所有数据都被保存
+    function finalizeExperiment() {
+      console.log("=== 最终数据统计 ===");
+
+      // 如果还有未保存的响应数据，保存它们
+      if (trialResponses.value.length > 0 && currentTrialRound.value < 3) {
+        console.log(`保存最后一轮数据: ${trialResponses.value.length} 个响应`);
+        trialResults.value[currentTrialRound.value] = [...trialResponses.value];
+        trialResponses.value = [];
+      }
+
+      // 输出最终统计
+      let totalResponses = 0;
+      trialResults.value.forEach((round, index) => {
+        console.log(`第${index}轮: ${round.length}个数据`);
+        totalResponses += round.length;
+      });
+      console.log(`总数据量: ${totalResponses}`);
+      console.log("=================");
     }
 
     return {
@@ -166,6 +207,8 @@ export const useSpreadingActivationStore = defineStore(
       setGroupType,
       debugLogState,
       resetTrialIndex,
+      finalizeExperiment,
+      resetExperimentState,
     };
   }
 );

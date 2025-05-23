@@ -180,7 +180,9 @@ onMounted(() => {
 
   // 如果是正式实验模式，重置试次索引（因为练习完成后索引可能不是0）
   if (!isPractice.value) {
-    store.resetTrialIndex();
+    store.resetExperimentState();
+    // 添加状态检查
+    store.debugLogState();
   }
 
   startTrial();

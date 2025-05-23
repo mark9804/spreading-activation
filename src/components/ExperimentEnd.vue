@@ -3,13 +3,18 @@ import xlsx from "json-as-xlsx";
 import { json2csv } from "json-2-csv";
 import { saveAs } from "file-saver";
 import { useSpreadingActivationStore } from "@/store/spreadingActivationStore";
-import { computed } from "vue";
+import { computed, onMounted } from "vue";
 import { flat } from "radashi";
 import { useRouter } from "vue-router";
 import { settings } from "@/settings";
 
 const useStore = useSpreadingActivationStore();
 const router = useRouter();
+
+// 在组件加载时确保数据完整性
+onMounted(() => {
+  useStore.finalizeExperiment();
+});
 
 const result = computed(() => {
   const results = flat(useStore.getResults);
@@ -39,6 +44,17 @@ const result = computed(() => {
 
 function handleExport() {
   try {
+    // 添加调试信息
+    console.log("=== 数据导出调试 ===");
+    console.log("原始结果:", useStore.getResults);
+    useStore.getResults.forEach((round, index) => {
+      console.log(`第${index}轮: ${round.length}个数据`);
+    });
+
+    const results = flat(useStore.getResults);
+    console.log("展开后总数据量:", results.length);
+    console.log("==================");
+
     xlsx(result.value, {
       fileName: `実験データ-${new Date().toLocaleDateString()}`,
     });

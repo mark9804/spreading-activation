@@ -36,20 +36,28 @@ export function startAutoKeyPress() {
     clearInterval(debugInterval);
   }
 
-  // 使用递归setTimeout而不是setInterval，以便每次都有不同的延迟
-  function pressKey() {
+  // 添加延迟，确保实验组件完全加载后再开始自动按键
+  console.log("自动按键模式：等待2秒后开始...");
+
+  setTimeout(() => {
     if (!store.isDebugMode) return;
 
-    // 随机选择按f或j键
-    const key = getRandomKey();
-    simulateKeyPress(key);
+    console.log("自动按键模式：开始执行");
+    // 使用递归setTimeout而不是setInterval，以便每次都有不同的延迟
+    function pressKey() {
+      if (!store.isDebugMode) return;
 
-    const delay = getRandomDelay();
-    debugInterval = window.setTimeout(pressKey, delay);
-  }
+      // 随机选择按f或j键
+      const key = getRandomKey();
+      simulateKeyPress(key);
 
-  // 开始第一次按键
-  debugInterval = window.setTimeout(pressKey, getRandomDelay());
+      const delay = getRandomDelay();
+      debugInterval = window.setTimeout(pressKey, delay);
+    }
+
+    // 开始第一次按键
+    debugInterval = window.setTimeout(pressKey, getRandomDelay());
+  }, 2000); // 延迟2秒
 }
 
 // 停止自动按键

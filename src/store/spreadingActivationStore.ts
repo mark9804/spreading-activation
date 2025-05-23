@@ -61,10 +61,12 @@ export const useSpreadingActivationStore = defineStore(
     };
 
     function newRound() {
-      trialResults.value[currentTrialRound.value] = trialResponses.value;
+      // 创建 trialResponses 的副本，而不是直接赋值引用
+      trialResults.value[currentTrialRound.value] = [...trialResponses.value];
       trialResponses.value = [];
       currentTrialRound.value++;
       currentTrialIndex.value = 0;
+      console.log(`Started round ${currentTrialRound.value}`);
     }
 
     function checkIsRoundComplete(isPractice: boolean) {
@@ -86,13 +88,19 @@ export const useSpreadingActivationStore = defineStore(
      */
     function recordResponse(response: Result, isPractice: boolean) {
       if (isPractice) {
+        // 练习模式：只增加索引，不记录数据，也不调用newRound
       } else {
         trialResponses.value.push(response);
       }
 
       currentTrialIndex.value++;
       const isRoundComplete = checkIsRoundComplete(isPractice);
-      if (isRoundComplete) {
+
+      if (isRoundComplete && !isPractice) {
+        // 只有在非练习模式下才调用newRound
+        console.log(
+          `Round ${currentTrialRound.value} completed with ${trialResponses.value.length} responses. Starting new round.`
+        );
         newRound();
       }
       return isRoundComplete;
@@ -118,6 +126,30 @@ export const useSpreadingActivationStore = defineStore(
     // 获取 debugMode 的计算属性
     const isDebugMode = computed(() => debugMode.value);
 
+    // 添加调试函数
+    function debugLogState() {
+      console.log("=== Spreading Activation Store Debug ===");
+      console.log("currentTrialRound:", currentTrialRound.value);
+      console.log("currentTrialIndex:", currentTrialIndex.value);
+      console.log("trialResponses.length:", trialResponses.value.length);
+      console.log("trialResults:");
+      trialResults.value.forEach((round, index) => {
+        console.log(`  Round ${index}: ${round.length} items`);
+        if (round.length > 0) {
+          console.log(`    First item:`, round[0]);
+          console.log(`    Last item:`, round[round.length - 1]);
+        }
+      });
+      console.log("isExperimentComplete:", isExperimentComplete.value);
+      console.log("=====================================");
+    }
+
+    // 在正式实验开始前重置试次索引（练习完成后可能不是0）
+    function resetTrialIndex() {
+      console.log(`Resetting trial index from ${currentTrialIndex.value} to 0`);
+      currentTrialIndex.value = 0;
+    }
+
     return {
       currentTrialIndex,
       currentTrialRound,
@@ -132,6 +164,8 @@ export const useSpreadingActivationStore = defineStore(
       isDebugMode,
       getGroupType,
       setGroupType,
+      debugLogState,
+      resetTrialIndex,
     };
   }
 );

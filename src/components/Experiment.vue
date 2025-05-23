@@ -178,6 +178,11 @@ onMounted(() => {
   // 检查并启动 debug 模式
   checkAndStartDebugMode();
 
+  // 如果是正式实验模式，重置试次索引（因为练习完成后索引可能不是0）
+  if (!isPractice.value) {
+    store.resetTrialIndex();
+  }
+
   startTrial();
 });
 

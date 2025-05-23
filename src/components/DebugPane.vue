@@ -41,7 +41,14 @@ defineProps<{
     <div>group: {{ store.getGroupType }}</div>
     <div>index: {{ store.currentTrialIndex }}</div>
     <div>round: {{ store.currentTrialRound }}</div>
-    <div>currentItem: {{ store.getCurrentStimulusItem(isPractice).value }}</div>
+    <div>
+      currentItem:
+      {{
+        !store.isExperimentComplete
+          ? store.getCurrentStimulusItem(isPractice).value
+          : "实验已完成"
+      }}
+    </div>
     <div>
       isPractice: {{ isPractice }} ({{ router.currentRoute.value.query.type }})
     </div>

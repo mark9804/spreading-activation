@@ -33,7 +33,8 @@ export function startAutoKeyPress() {
   const store = useSpreadingActivationStore();
 
   if (debugInterval) {
-    clearInterval(debugInterval);
+    clearTimeout(debugInterval);
+    debugInterval = null;
   }
 
   // 添加延迟，确保实验组件完全加载后再开始自动按键
@@ -43,16 +44,56 @@ export function startAutoKeyPress() {
     if (!store.isDebugMode) return;
 
     console.log("自动按键模式：开始执行");
+
+    // @ts-ignore
+    let lastPressTime = Date.now();
+    let keyPressCount = 0;
+    let consecutiveErrorCount = 0;
+
     // 使用递归setTimeout而不是setInterval，以便每次都有不同的延迟
     function pressKey() {
-      if (!store.isDebugMode) return;
+      try {
+        // 检查是否仍处于调试模式
+        if (!store.isDebugMode) {
+          console.log("调试模式已禁用，停止自动按键");
+          return;
+        }
 
-      // 随机选择按f或j键
-      const key = getRandomKey();
-      simulateKeyPress(key);
+        // 检查实验是否已完成
+        if (store.isExperimentComplete) {
+          console.log("实验已完成，停止自动按键");
+          return;
+        }
 
-      const delay = getRandomDelay();
-      debugInterval = window.setTimeout(pressKey, delay);
+        // 随机选择按f或j键
+        const key = getRandomKey();
+        simulateKeyPress(key);
+        keyPressCount++;
+
+        // 记录按键情况，每10次打印一次
+        if (keyPressCount % 10 === 0) {
+          console.log(`已自动按键 ${keyPressCount} 次`);
+        }
+
+        const now = Date.now();
+        lastPressTime = now;
+        consecutiveErrorCount = 0;
+
+        const delay = getRandomDelay();
+        debugInterval = window.setTimeout(pressKey, delay);
+      } catch (error) {
+        consecutiveErrorCount++;
+        console.error("自动按键出错：", error);
+
+        // 如果连续错误超过5次，放弃自动按键
+        if (consecutiveErrorCount >= 5) {
+          console.error("自动按键连续出错，停止");
+          return;
+        }
+
+        // 出错后1秒后重试
+        debugInterval = window.setTimeout(pressKey, 1000);
+      }
     }
 
     // 开始第一次按键
@@ -63,8 +104,9 @@ export function startAutoKeyPress() {
 // 停止自动按键
 export function stopAutoKeyPress() {
   if (debugInterval) {
-    clearInterval(debugInterval);
+    clearTimeout(debugInterval);
     debugInterval = null;
+    console.log("自动按键已停止");
   }
 }
 

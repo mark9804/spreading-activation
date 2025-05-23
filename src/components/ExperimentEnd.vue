@@ -14,6 +14,15 @@ const router = useRouter();
 // 在组件加载时确保数据完整性
 onMounted(() => {
   useStore.finalizeExperiment();
+
+  console.log("数据导出准备:");
+  console.log("原始数据长度:");
+  useStore.getResults.forEach((round, i) => {
+    console.log(`第${i}轮: ${round.length}个响应`);
+  });
+
+  const flattenedResults = flat(useStore.getResults);
+  console.log(`总共 ${flattenedResults.length} 个响应`);
 });
 
 const result = computed(() => {

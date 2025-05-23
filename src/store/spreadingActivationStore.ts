@@ -49,24 +49,33 @@ export const useSpreadingActivationStore = defineStore(
 
     const getCurrentStimulusItem = (isPractice: boolean) => {
       if (isPractice) {
-        return computed(() => PRACTICE_LIST.value[currentTrialIndex.value]);
+        return computed(() => {
+          if (currentTrialIndex.value < PRACTICE_LIST.value.length) {
+            return PRACTICE_LIST.value[currentTrialIndex.value];
+          }
+          return null; // 练习完成
+        });
       } else {
-        return computed(
-          () =>
-            getFullTrialLists.value[currentTrialRound.value][
-              currentTrialIndex.value
-            ]
-        );
+        return computed(() => {
+          // 检查是否超出实验轮次范围
+          if (currentTrialRound.value >= getFullTrialLists.value.length) {
+            return null; // 实验已完成
+          }
+
+          // 检查是否超出当前轮次的试次范围
+          const currentList = getFullTrialLists.value[currentTrialRound.value];
+          if (currentTrialIndex.value >= currentList.length) {
+            return null; // 当前轮次已完成
+          }
+
+          return currentList[currentTrialIndex.value];
+        });
       }
     };
 
     function newRound() {
       // 创建 trialResponses 的副本，而不是直接赋值引用
       trialResults.value[currentTrialRound.value] = [...trialResponses.value];
-      console.log(
-        `第${currentTrialRound.value}轮数据已保存: ${trialResults.value[currentTrialRound.value].length}个`
-      );
-
       trialResponses.value = [];
       currentTrialRound.value++;
       currentTrialIndex.value = 0;
@@ -90,28 +99,35 @@ export const useSpreadingActivationStore = defineStore(
      * @returns {boolean} 是否完成一轮: boolean
      */
     function recordResponse(response: Result, isPractice: boolean) {
+      // 检测并修正意外的初始状态问题
+      if (
+        currentTrialIndex.value > 0 &&
+        trialResponses.value.length === 0 &&
+        !isPractice
+      ) {
+        console.warn(
+          `检测到状态不一致，重置试次索引: ${currentTrialIndex.value} -> 0`
+        );
+        currentTrialIndex.value = 0;
+      }
+
       if (isPractice) {
         // 练习模式：只增加索引，不记录数据，也不调用newRound
         currentTrialIndex.value++;
       } else {
-        // 特别检查第一个响应
-        if (currentTrialRound.value === 0 && currentTrialIndex.value === 0) {
-          console.log(`🔥 记录第0轮第0个试次响应`);
-        }
-
         trialResponses.value.push(response);
-
-        // 在非练习模式下增加索引
-        currentTrialIndex.value++;
+        currentTrialIndex.value++; // 在非练习模式下增加索引
       }
 
       const isRoundComplete = checkIsRoundComplete(isPractice);
 
       if (isRoundComplete && !isPractice) {
         // 只有在非练习模式下才调用newRound
-        console.log(
-          `第${currentTrialRound.value}轮完成，共${trialResponses.value.length}个响应`
-        );
+        if (trialResponses.value.length < 40) {
+          console.warn(
+            `警告: 第${currentTrialRound.value}轮记录了${trialResponses.value.length}个响应，少于40个`
+          );
+        }
         newRound();
       }
       return isRoundComplete;
@@ -137,58 +153,42 @@ export const useSpreadingActivationStore = defineStore(
     // 获取 debugMode 的计算属性
     const isDebugMode = computed(() => debugMode.value);
 
-    // 添加调试函数
+    // 完全重置实验状态，确保从干净状态开始
+    function resetExperimentState() {
+      currentTrialRound.value = 0;
+      currentTrialIndex.value = 0;
+      trialResponses.value = [];
+      // trialResults 不重置，以保留之前的数据（如果需要）
+    }
+
+    // 确保实验结束时所有数据都被保存
+    function finalizeExperiment() {
+      // 如果还有未保存的响应数据，保存它们
+      if (trialResponses.value.length > 0 && currentTrialRound.value < 3) {
+        trialResults.value[currentTrialRound.value] = [...trialResponses.value];
+        trialResponses.value = [];
+      }
+    }
+
+    // 添加调试函数 (保持不变或按需修改)
     function debugLogState() {
-      console.log("=== Spreading Activation Store Debug ===");
-      console.log("currentTrialRound:", currentTrialRound.value);
-      console.log("currentTrialIndex:", currentTrialIndex.value);
-      console.log("trialResponses.length:", trialResponses.value.length);
-      console.log("trialResults:");
+      console.log("=== Store State ===");
+      console.log(
+        `Round: ${currentTrialRound.value}, Index: ${currentTrialIndex.value}`
+      );
+      console.log(`Responses in current round: ${trialResponses.value.length}`);
+      console.log("All Results:");
       trialResults.value.forEach((round, index) => {
         console.log(`  Round ${index}: ${round.length} items`);
-        if (round.length > 0) {
-          console.log(`    First item:`, round[0]);
-          console.log(`    Last item:`, round[round.length - 1]);
-        }
       });
-      console.log("isExperimentComplete:", isExperimentComplete.value);
-      console.log("=====================================");
+      console.log(`Experiment Complete: ${isExperimentComplete.value}`);
+      console.log("===================");
     }
 
     // 在正式实验开始前重置试次索引（练习完成后可能不是0）
     function resetTrialIndex() {
       console.log(`重置试次索引: ${currentTrialIndex.value} -> 0`);
       currentTrialIndex.value = 0;
-    }
-
-    // 完全重置实验状态，确保从干净状态开始
-    function resetExperimentState() {
-      console.log("重置实验状态");
-      currentTrialRound.value = 0;
-      currentTrialIndex.value = 0;
-      trialResponses.value = [];
-      // 不重置 trialResults，因为可能已经有之前的数据
-    }
-
-    // 确保实验结束时所有数据都被保存
-    function finalizeExperiment() {
-      console.log("=== 最终数据统计 ===");
-
-      // 如果还有未保存的响应数据，保存它们
-      if (trialResponses.value.length > 0 && currentTrialRound.value < 3) {
-        console.log(`保存最后一轮数据: ${trialResponses.value.length} 个响应`);
-        trialResults.value[currentTrialRound.value] = [...trialResponses.value];
-        trialResponses.value = [];
-      }
-
-      // 输出最终统计
-      let totalResponses = 0;
-      trialResults.value.forEach((round, index) => {
-        console.log(`第${index}轮: ${round.length}个数据`);
-        totalResponses += round.length;
-      });
-      console.log(`总数据量: ${totalResponses}`);
-      console.log("=================");
     }
 
     return {

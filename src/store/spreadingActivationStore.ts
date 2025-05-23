@@ -24,21 +24,25 @@ export const useSpreadingActivationStore = defineStore(
       groupType.value = value;
     }
 
-    const getFullTrialLists = computed(() => {
-      // 打乱顺序
+    // Calculate the lists once and store them in a simple const.
+    const _calculatedFullTrialLists = (() => {
+      console.log("[Store Setup] Initializing _calculatedFullTrialLists ONCE.");
       const SR_LIST_SHUFFLED = shuffle(SR_LIST.value);
       const NO_LIST_SHUFFLED = shuffle(NO_LIST.value);
       const UR_LIST_SHUFFLED = shuffle(UR_LIST.value);
 
-      // 把三个 List 全部三等分
       const SrLists = cluster(SR_LIST_SHUFFLED, SR_LIST_SHUFFLED.length / 3);
       const NoLists = cluster(NO_LIST_SHUFFLED, NO_LIST_SHUFFLED.length / 3);
       const UrLists = cluster(UR_LIST_SHUFFLED, UR_LIST_SHUFFLED.length / 3);
 
-      // 整合成三个 40 个试次的 List
       return SrLists.map((srList, index) =>
         shuffle([...srList, ...NoLists[index], ...UrLists[index]])
       );
+    })();
+
+    const getFullTrialLists = computed(() => {
+      // console.log("[getFullTrialLists] Accessing pre-calculated lists."); // Optional: uncomment for verbose logging
+      return _calculatedFullTrialLists;
     });
 
     const currentTrialRound = ref(0); // 当前试次轮次，0<= x <= 2，大于 2 结束
@@ -49,10 +53,23 @@ export const useSpreadingActivationStore = defineStore(
     const getResults = computed(() => trialResults.value);
 
     const getCurrentStimulusItem = (isPractice: boolean) => {
+      // 在非练习模式下，当索引为0或1时，记录获取的刺激项
+      if (
+        !isPractice &&
+        (currentTrialIndex.value === 0 || currentTrialIndex.value === 1)
+      ) {
+        // console.log(
+        //   `[getCurrentStimulusItem] 获取刺激项 - 轮次: ${currentTrialRound.value}, 试次: ${currentTrialIndex.value}`
+        // );
+      }
+
       if (isPractice) {
         return computed(() => {
           if (currentTrialIndex.value < PRACTICE_LIST.value.length) {
-            return PRACTICE_LIST.value[currentTrialIndex.value];
+            const item = PRACTICE_LIST.value[currentTrialIndex.value];
+            // 练习模式的日志（如果需要）
+            // console.log(`[Practice] Item:`, item);
+            return item;
           }
           return null; // 练习完成
         });
@@ -69,7 +86,14 @@ export const useSpreadingActivationStore = defineStore(
             return null; // 当前轮次已完成
           }
 
-          return currentList[currentTrialIndex.value];
+          const item = currentList[currentTrialIndex.value];
+          // 在非练习模式下，当索引为0或1时，记录获取的具体刺激项内容
+          if (currentTrialIndex.value === 0 || currentTrialIndex.value === 1) {
+            // console.log(
+            //   `[getCurrentStimulusItem] -> Prime: ${item?.prime}, Target: ${item?.target}`
+            // );
+          }
+          return item;
         });
       }
     };
@@ -100,6 +124,18 @@ export const useSpreadingActivationStore = defineStore(
      * @returns {boolean} 是否完成一轮: boolean
      */
     function recordResponse(response: Result, isPractice: boolean) {
+      // Log for the specific case: round 0, first few trials
+      if (
+        !isPractice &&
+        currentTrialRound.value === 0 &&
+        currentTrialIndex.value < 5
+      ) {
+        // Log first 5 trials of round 0
+        // console.log(
+        //   `[recordResponse] Pre-increment: Round: ${currentTrialRound.value}, Index: ${currentTrialIndex.value}. Recording response: Prime='${response.prime}', Target='${response.target}', Condition='${response.condition}', RT=${response.responseTime}, Correct=${response.isCorrect}`
+        // );
+      }
+
       // 检测并修正意外的初始状态问题
       if (
         currentTrialIndex.value > 0 &&
@@ -117,6 +153,22 @@ export const useSpreadingActivationStore = defineStore(
         currentTrialIndex.value++;
       } else {
         trialResponses.value.push(response);
+        // Log the actual stored item for the first few trials of round 0
+        if (
+          !isPractice &&
+          currentTrialRound.value === 0 &&
+          currentTrialIndex.value < 5
+        ) {
+          const recordedIdx = trialResponses.value.length - 1;
+          if (trialResponses.value[recordedIdx]) {
+            // Ensure item exists
+            //  console.log(
+            //     `[recordResponse] Post-push: Round: ${currentTrialRound.value}, Index (before increment): ${currentTrialIndex.value}. trialResponses[${recordedIdx}]: Prime='${trialResponses.value[recordedIdx].prime}', Target='${trialResponses.value[recordedIdx].target}'`
+            //  );
+          } else {
+            // console.error(`[recordResponse] Error: trialResponses[${recordedIdx}] is undefined after push.`);
+          }
+        }
         currentTrialIndex.value++; // 在非练习模式下增加索引
       }
 

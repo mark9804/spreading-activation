@@ -17,7 +17,7 @@ export const useSpreadingActivationStore = defineStore(
     const debugMode = ref(false);
 
     // 实验组别
-    const groupType = ref<GroupType>(GroupType.A);
+    const groupType = ref<GroupType>(GroupType.B);
     const getGroupType = computed(() => groupType.value);
     function setGroupType(value: GroupType) {
       groupType.value = value;

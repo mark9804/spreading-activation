@@ -14,8 +14,16 @@ const router = useRouter();
 const result = computed(() => {
   const results = flat(useStore.getResults);
 
-  // 获取所有可能的列名
-  const allKeys = [...new Set(results.flatMap(result => Object.keys(result)))];
+  // 获取所有可能的列名，但排除 'group' 字段
+  const allKeys = [
+    ...new Set(results.flatMap(result => Object.keys(result))),
+  ].filter(key => key !== "group");
+
+  // 从结果数据中移除 group 字段
+  const filteredResults = results.map(result => {
+    const { group, ...resultWithoutGroup } = result;
+    return resultWithoutGroup;
+  });
 
   return [
     {
@@ -24,7 +32,7 @@ const result = computed(() => {
         label: key,
         value: key,
       })),
-      content: results,
+      content: filteredResults,
     },
   ];
 });

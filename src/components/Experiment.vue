@@ -224,10 +224,10 @@ onUnmounted(() => {
     </div>
 
     <div v-if="isPractice" class="fixed bottom-8 text-center text-gray-100">
-      単語間に意味的な関連がある場合を（<span
+      単語間に意味的に関連がある場合を（<span
         class="mx-1 px-3 py-1 bg-gray-400 rounded font-bold"
         >F</span
-      >）、 意味的な関連がない場合を（<span
+      >）、 意味的に関連がない場合を（<span
         class="mx-1 px-3 py-1 bg-gray-400 rounded font-bold"
         >J</span
       >）を押してください。

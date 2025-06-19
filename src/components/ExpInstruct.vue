@@ -2,9 +2,8 @@
 import { computed, onMounted, onUnmounted, Fragment } from "vue";
 import { useRouter } from "vue-router";
 import { isNumber } from "radashi";
-import INST1 from "@/assets/INST1.jpg";
-import INST2 from "@/assets/INST2.jpg";
-import INST3 from "@/assets/INST3.jpg";
+import INST1 from "@/assets/INST1.png";
+import INST2 from "@/assets/INST2.png";
 import DebugPane from "./DebugPane.vue";
 
 const props = defineProps<{
@@ -30,13 +29,6 @@ const instructionContent = computed(() => {
         </Fragment>
       );
     case 3:
-      return (
-        <Fragment>
-          <h1>説明</h1>
-          <img src={INST3} class="instruction-image" alt="Instruction Image" />
-        </Fragment>
-      );
-    case 4:
       return (
         <Fragment>
           <h1 class="text-center mb-6">これから練習が始まります</h1>

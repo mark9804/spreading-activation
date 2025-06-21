@@ -1,3 +1,3 @@
 export const settings = {
-  formUrl: "https://forms.office.com/r/7xe0RpSs57",
+  formUrl: "https://forms.cloud.microsoft/r/mPZ1yqX2Q3",
 };
